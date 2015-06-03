@@ -1,0 +1,10 @@
+Currency.v11.suo
+TestResults
+[Dd]ebug/
+[Rr]elease/
+x64/
+build/
+[Bb]in/
+[Oo]bj/
+
+*.pdb
