@@ -30,9 +30,6 @@ namespace Currency.Views
         {
             InitializeComponent();
             chart.ChartAreas.Add(new ChartArea("Default"));
-            //chart.Series.Add(new Series("Series1"));
-            //chart.Series["Series1"].ChartArea = "Default";
-            //chart.Series["Series1"].ChartType = SeriesChartType.Line;
 
             lbCurrency.SelectedItem = Abbreviation.USD;
             dpDateFrom.SelectedDate = DateTime.Now.AddMonths(-1);
