@@ -56,6 +56,10 @@ namespace Currency.Views
         private void RefreshChart()
         {
             var data = rates.Select(list => list.Value.Where(rate => dpDateTo.SelectedDate.Value >= rate.Date && dpDateFrom.SelectedDate.Value <= rate.Date));
+            if (data.First().Count() <= 1)
+            {
+                return;
+            }
             var excessData = chart.Series.Where(item => !data.Select(it => it.First().Abbreviation.ToString()).Contains(item.Name)).ToList();
             if (excessData.Any())
             {
