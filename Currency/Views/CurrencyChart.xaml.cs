@@ -22,7 +22,6 @@ namespace Currency.Views
         private bool leftButtonPressed;
         private bool rightButtonPressed;
         private bool dateChangeInAction;
-        private double delta;
 
         #endregion
 
@@ -37,7 +36,6 @@ namespace Currency.Views
             leftButtonPressed = false;
             rightButtonPressed = false;
             dateChangeInAction = false;
-            delta = 0;
             rates = new Dictionary<Abbreviation, List<Rate>>();
 
             lbCurrency.SelectionChanged += lbCurrency_SelectionChanged;
@@ -56,7 +54,7 @@ namespace Currency.Views
         private void RefreshChart()
         {
             var data = rates.Select(list => list.Value.Where(rate => dpDateTo.SelectedDate.Value >= rate.Date && dpDateFrom.SelectedDate.Value <= rate.Date));
-            if (data.First().Count() <= 1)
+            if (data.Any() && data.First().Count() <= 1)
             {
                 return;
             }
