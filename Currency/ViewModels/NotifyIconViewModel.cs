@@ -2,9 +2,12 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
 using Currency.BusinessEntities;
@@ -15,6 +18,16 @@ namespace Currency.ViewModels
 {
     public class NotifyIconViewModel : INotifyPropertyChanged
     {
+
+        #region ctor
+
+        public NotifyIconViewModel()
+        {
+            _processKillers = new Dictionary<string, CancellationTokenSource>();
+            _tasks = new Dictionary<string, Task>();
+        }
+
+        #endregion
 
         #region Methods
 
@@ -40,6 +53,20 @@ namespace Currency.ViewModels
             Rates = sb.ToString();
         }
 
+        private async Task KillProcessAsync(CancellationToken cancellToken, string processName, int period)
+        {
+            while (!cancellToken.IsCancellationRequested)
+            {
+                var processes = Process.GetProcessesByName(processName);
+                if (processes.Any())
+                {
+                    var proc = processes.First();
+                    proc.Kill();
+                }
+                await Task.Delay(period * 1000);
+            }
+        }
+
         private void ShowDialog(Window window)
         {
             window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
@@ -48,7 +75,10 @@ namespace Currency.ViewModels
 
         #endregion
 
-        #region Public Properties
+        #region Properties
+
+        Dictionary<string, CancellationTokenSource> _processKillers;
+        Dictionary<string, Task> _tasks;
 
         private string _rates;
 
@@ -65,6 +95,14 @@ namespace Currency.ViewModels
             }
         }
 
+        public string[] Processes
+        {
+            get
+            {
+                return new string[] { "dotnetfx64.exe" };
+            }
+        }
+
         #endregion
 
         #region Commands
@@ -73,7 +111,35 @@ namespace Currency.ViewModels
         {
             get
             {
-                return new DelegateCommand { CommandAction = () => Application.Current.Shutdown() };
+                return new DelegateCommand { CommandAction = (param) => Application.Current.Shutdown() };
+            }
+        }
+
+        public ICommand ToggleProcessKillerCommand
+        {
+            get
+            {
+                return new DelegateCommand
+                {
+                    CommandAction = (param) =>
+                    {
+                        if (_processKillers.Any(item => item.Key == param.ToString()))
+                        {
+                            var cts = _processKillers.First(item => item.Key == param.ToString());
+                            cts.Value.Cancel();
+
+                            _processKillers.Remove(param.ToString());
+                            _tasks.Remove(param.ToString());
+                        }
+                        else
+                        {
+                            var cts = new CancellationTokenSource();
+                            _tasks.Add(param.ToString(), Task.Run(() => KillProcessAsync(cts.Token, param.ToString(), 3)));
+
+                            _processKillers.Add(param.ToString(), cts);
+                        }
+                    }
+                };
             }
         }
 
@@ -81,7 +147,7 @@ namespace Currency.ViewModels
         {
             get
             {
-                return new DelegateCommand { CommandAction = () => ShowDialog(new CurrencyChart()) };
+                return new DelegateCommand { CommandAction = (param) => ShowDialog(new CurrencyChart()) };
             }
         }
 
@@ -89,7 +155,7 @@ namespace Currency.ViewModels
         {
             get
             {
-                return new DelegateCommand { CommandAction = () => RefreshRates() };
+                return new DelegateCommand { CommandAction = (param) => RefreshRates() };
             }
         }
 
@@ -97,7 +163,7 @@ namespace Currency.ViewModels
         {
             get
             {
-                return new DelegateCommand { CommandAction = () => Clipboard.SetText(Rates) };
+                return new DelegateCommand { CommandAction = (param) => Clipboard.SetText(Rates) };
             }
         }
 

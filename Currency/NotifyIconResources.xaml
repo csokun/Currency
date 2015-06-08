@@ -11,23 +11,28 @@
   -->
     <ContextMenu x:Shared="false" x:Key="SysTrayMenu">
         <MenuItem Header="View Chart" Command="{Binding ViewChartCommand}" />
+        <MenuItem Header="Kill Process">
+            <ItemsControl ItemsSource="{Binding Path=Processes}">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate>
+                        <MenuItem Header="{Binding}" CommandParameter="{Binding}" Command="{Binding RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}, Path=DataContext.ToggleProcessKillerCommand}"></MenuItem>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </MenuItem>
         <Separator></Separator>
         <MenuItem Header="Exit" Command="{Binding ExitApplicationCommand}" />
     </ContextMenu>
 
-    <!-- the application's NotifyIcon - started from App.xaml.cs. Declares its own view model. -->
     <tb:TaskbarIcon x:Key="NotifyIcon"
                     IconSource="/Red.ico" LeftClickCommand="{Binding NotifyIconClickCommand}"
                     ContextMenu="{StaticResource SysTrayMenu}">
 
         <tb:TaskbarIcon.TrayPopup >
-            <!-- the popup, here a custom user control, will also get the DataContext of the NotifyIcon -->
             <local:CurrencyPopup />
         </tb:TaskbarIcon.TrayPopup>
-        <!-- self-assign a data context (could also be done programmatically) -->
         <tb:TaskbarIcon.DataContext>
             <vm:NotifyIconViewModel/>
         </tb:TaskbarIcon.DataContext>
     </tb:TaskbarIcon>
-
 </ResourceDictionary>

@@ -29,6 +29,7 @@ namespace Currency
         {
             notifyIcon.Dispose();
             base.OnExit(e);
+
         }
     }
 }
