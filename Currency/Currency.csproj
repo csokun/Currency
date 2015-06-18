@@ -83,6 +83,7 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
+    <Compile Include="ApplicationData\SharedData.cs" />
     <Compile Include="CurrencyPopup.xaml.cs">
       <DependentUpon>CurrencyPopup.xaml</DependentUpon>
     </Compile>

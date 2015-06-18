@@ -1,16 +1,15 @@
 ﻿using System;
-using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
+using Currency.ApplicationData;
 using Currency.BusinessEntities;
 using Currency.Helpers;
 using Currency.Views;
@@ -25,52 +24,8 @@ namespace Currency.ViewModels
         public NotifyIconViewModel()
         {
             _processKillers = new Dictionary<string, CancellationTokenSource>();
-        }
-
-        #endregion
-
-        #region Methods
-
-        private void RefreshRates()
-        {
-            var rates = RatesHelper.GetLastDailyRates();
-            var prevRates = RatesHelper.GetPrevDailyRates();
-            StringBuilder sb = new StringBuilder();
-
-            sb.AppendLine(String.Format("Rates for {0}", rates.First().Date.AddDays(DateTime.Now.DayOfWeek == DayOfWeek.Friday ? -3 : -1).ToShortDateString()));
-
-            rates = rates.
-                Where(item => (item.Abbreviation & (Abbreviation.USD | Abbreviation.EUR | Abbreviation.RUB)) != Abbreviation.NONE).ToList();
-            prevRates = prevRates.
-                Where(item => (item.Abbreviation & (Abbreviation.USD | Abbreviation.EUR | Abbreviation.RUB)) != Abbreviation.NONE).ToList();
-
-            foreach (var rate in rates)
-            {
-                double prev = prevRates.First(item => item.Abbreviation == rate.Abbreviation).OfficialRate;
-                sb.AppendLine(String.Format("{0} {1} -> {2} | {3}", rate.Abbreviation.ToString(), prev, rate.OfficialRate, rate.OfficialRate - prev > 0 ? "+" + (rate.OfficialRate - prev) : (rate.OfficialRate - prev).ToString()));
-            }
-
-            Rates = sb.ToString();
-        }
-
-        private async Task KillProcessAsync(CancellationToken cancellToken, string processName, int period)
-        {
-            while (!cancellToken.IsCancellationRequested)
-            {
-                var processes = Process.GetProcessesByName(processName);
-                if (processes.Any())
-                {
-                    var proc = processes.First();
-                    proc.Kill();
-                }
-                await Task.Delay(period * 1000);
-            }
-        }
-
-        private void ShowDialog(Window window)
-        {
-            window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
-            window.ShowDialog();
+            SharedData.ProcessesToKill.Processes.Where(proc => proc.AutoStart).ToList()
+                .ForEach(proc => ToggleProcessKilling(proc.Name, proc.Period));
         }
 
         #endregion
@@ -94,18 +49,11 @@ namespace Currency.ViewModels
             }
         }
 
-        private ProcessesDictionary _processes;
-
         public ProcessesDictionary Processes
         {
             get
             {
-                if (_processes == null)
-                {
-                    _processes = XmlSerializerHelper.Deserialize<ProcessesDictionary>(Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), @"Configuration\Processes\Processes.xml"));
-                }
-
-                return _processes;
+                return SharedData.ProcessesToKill;
             }
         }
 
@@ -129,19 +77,7 @@ namespace Currency.ViewModels
                 {
                     CommandAction = (param) =>
                     {
-                        if (_processKillers.Any(item => item.Key == param.ToString()))
-                        {
-                            var cts = _processKillers.First(item => item.Key == param.ToString());
-                            cts.Value.Cancel();
-
-                            _processKillers.Remove(param.ToString());
-                        }
-                        else
-                        {
-                            var cts = new CancellationTokenSource();
-                            KillProcessAsync(cts.Token, param.ToString(), Processes.Processes.First(pr => pr.Name == param.ToString()).Period);
-                            _processKillers.Add(param.ToString(), cts);
-                        }
+                        ToggleProcessKilling(param.ToString(), Processes.Processes.First(pr => pr.Name == param.ToString()).Period);
                     }
                 };
             }
@@ -173,6 +109,68 @@ namespace Currency.ViewModels
 
         #endregion
 
+        #region Methods
+
+        private void RefreshRates()
+        {
+            var rates = RatesHelper.GetLastDailyRates();
+            var prevRates = RatesHelper.GetPrevDailyRates();
+            StringBuilder sb = new StringBuilder();
+
+            sb.AppendLine(String.Format("Rates for {0}", rates.First().Date.AddDays(DateTime.Now.DayOfWeek == DayOfWeek.Friday ? -3 : -1).ToShortDateString()));
+
+            rates = rates.
+                Where(item => (item.Abbreviation & (Abbreviation.USD | Abbreviation.EUR | Abbreviation.RUB)) != Abbreviation.NONE).ToList();
+            prevRates = prevRates.
+                Where(item => (item.Abbreviation & (Abbreviation.USD | Abbreviation.EUR | Abbreviation.RUB)) != Abbreviation.NONE).ToList();
+
+            foreach (var rate in rates)
+            {
+                double prev = prevRates.First(item => item.Abbreviation == rate.Abbreviation).OfficialRate;
+                sb.AppendLine(String.Format("{0} {1} -> {2} | {3}", rate.Abbreviation.ToString(), prev, rate.OfficialRate, rate.OfficialRate - prev > 0 ? "+" + (rate.OfficialRate - prev) : (rate.OfficialRate - prev).ToString()));
+            }
+
+            Rates = sb.ToString();
+        }
+
+        private void ToggleProcessKilling(string processName, int period)
+        {
+            if (_processKillers.Any(item => item.Key == processName))
+            {
+                var cts = _processKillers.First(item => item.Key == processName);
+                cts.Value.Cancel();
+                _processKillers.Remove(processName);
+            }
+            else
+            {
+                var cts = new CancellationTokenSource();
+                KillProcessAsync(cts.Token, processName, period);
+                _processKillers.Add(processName, cts);
+            }
+        }
+
+        private async Task KillProcessAsync(CancellationToken cancellToken, string processName, int period)
+        {
+            while (!cancellToken.IsCancellationRequested)
+            {
+                var processes = Process.GetProcessesByName(processName);
+                if (processes.Any())
+                {
+                    var proc = processes.First();
+                    proc.Kill();
+                }
+                await Task.Delay(period * 1000);
+            }
+        }
+
+        private void ShowDialog(Window window)
+        {
+            window.WindowStartupLocation = WindowStartupLocation.CenterOwner;
+            window.ShowDialog();
+        }
+
+        #endregion
+
         #region INotifyPropertyChanged
 
         public event PropertyChangedEventHandler PropertyChanged;
@@ -186,6 +184,5 @@ namespace Currency.ViewModels
         #endregion
 
     }
-
 
 }
