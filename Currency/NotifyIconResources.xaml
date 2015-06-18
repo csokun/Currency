@@ -12,10 +12,10 @@
     <ContextMenu x:Shared="false" x:Key="SysTrayMenu">
         <MenuItem Header="View Chart" Command="{Binding ViewChartCommand}" />
         <MenuItem Header="Kill Process">
-            <ItemsControl ItemsSource="{Binding Path=Processes}">
+            <ItemsControl ItemsSource="{Binding Path=Processes.Processes}">
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <MenuItem Header="{Binding}" CommandParameter="{Binding}" Command="{Binding RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}, Path=DataContext.ToggleProcessKillerCommand}"></MenuItem>
+                        <MenuItem Header="{Binding Name}" CommandParameter="{Binding Name}" Command="{Binding RelativeSource={RelativeSource AncestorType={x:Type ItemsControl}}, Path=DataContext.ToggleProcessKillerCommand}"></MenuItem>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>

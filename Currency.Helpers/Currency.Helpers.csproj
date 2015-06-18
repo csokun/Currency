@@ -46,6 +46,7 @@
     <Compile Include="AbbreviationHelper.cs" />
     <Compile Include="RatesHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="XmlSerializerHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\BankClient\BankClient.csproj">

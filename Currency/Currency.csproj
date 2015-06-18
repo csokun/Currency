@@ -113,6 +113,10 @@
       <SubType>Code</SubType>
     </Compile>
     <None Include="app.config" />
+    <None Include="Configuration\Processes\Processes.xsd">
+      <SubType>Designer</SubType>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Include="packages.config" />
     <AppDesigner Include="Properties\" />
     <None Include="Properties\DataSources\System.Data.DataSet.datasource" />
@@ -136,6 +140,12 @@
       <Project>{49480b29-a007-4fad-befb-d08865e17e0f}</Project>
       <Name>Currency.Helpers</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup />
+  <ItemGroup>
+    <None Include="Configuration\Processes\Processes.xml">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

@@ -41,6 +41,7 @@
   <ItemGroup>
     <Compile Include="Abbreviation.cs" />
     <Compile Include="CurrencyObj.cs" />
+    <Compile Include="ProcessDictionary.cs" />
     <Compile Include="Rate.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

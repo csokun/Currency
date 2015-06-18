@@ -1,0 +1,4 @@
+﻿<?xml version="1.0" encoding="utf-8" ?>
+  <processes>
+    <process name="dotnetfx64.exe" period_of_killing_sec="60"/>
+  </processes>

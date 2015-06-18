@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.IO;
 using System.Linq;
 using System.Net.WebSockets;
 using System.Text;
@@ -24,7 +25,6 @@ namespace Currency.ViewModels
         public NotifyIconViewModel()
         {
             _processKillers = new Dictionary<string, CancellationTokenSource>();
-            _tasks = new Dictionary<string, Task>();
         }
 
         #endregion
@@ -78,7 +78,6 @@ namespace Currency.ViewModels
         #region Properties
 
         Dictionary<string, CancellationTokenSource> _processKillers;
-        Dictionary<string, Task> _tasks;
 
         private string _rates;
 
@@ -95,11 +94,18 @@ namespace Currency.ViewModels
             }
         }
 
-        public string[] Processes
+        private ProcessesDictionary _processes;
+
+        public ProcessesDictionary Processes
         {
             get
             {
-                return new string[] { "dotnetfx64.exe" };
+                if (_processes == null)
+                {
+                    _processes = XmlSerializerHelper.Deserialize<ProcessesDictionary>(Path.Combine(Path.GetDirectoryName(Process.GetCurrentProcess().MainModule.FileName), @"Configuration\Processes\Processes.xml"));
+                }
+
+                return _processes;
             }
         }
 
@@ -129,13 +135,11 @@ namespace Currency.ViewModels
                             cts.Value.Cancel();
 
                             _processKillers.Remove(param.ToString());
-                            _tasks.Remove(param.ToString());
                         }
                         else
                         {
                             var cts = new CancellationTokenSource();
-                            _tasks.Add(param.ToString(), Task.Run(() => KillProcessAsync(cts.Token, param.ToString(), 3)));
-
+                            KillProcessAsync(cts.Token, param.ToString(), Processes.Processes.First(pr => pr.Name == param.ToString()).Period);
                             _processKillers.Add(param.ToString(), cts);
                         }
                     }
